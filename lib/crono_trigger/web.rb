@@ -1,7 +1,16 @@
 require "crono_trigger"
 require "sinatra/base"
 require "rack/contrib/post_body_content_type_parser"
-require "oj"
+
+# JSON serialization priority:
+# 1. Use Oj when it is installed (optional dependency).
+# 2. Otherwise fall back to ActiveSupport::JSON.encode, which uses the JSON gem internally.
+#    ActiveSupport::JSON (not ::JSON) keeps the compatibility with Oj.
+begin
+  require "oj"
+rescue LoadError
+  require "active_support/json/encoding"
+end
 
 module CronoTrigger
   class Web < Sinatra::Application
@@ -19,9 +28,9 @@ module CronoTrigger
       if params[:format] == "json"
         content_type :json
         @workers = CronoTrigger::Models::Worker.alive_workers
-        Oj.dump({
+        encode_json({
           records: @workers,
-        }, mode: :compat)
+        })
       else
         raise "unknown format"
       end
@@ -40,11 +49,11 @@ module CronoTrigger
           body ""
         else
           status 422
-          Oj.dump({error: "#{sig} signal is not supported"}, mode: :compat)
+          encode_json({error: "#{sig} signal is not supported"})
         end
       else
         status 422
-        Oj.dump({error: "Must set worker_id and signal"}, mode: :compat)
+        encode_json({error: "Must set worker_id and signal"})
       end
     end
 
@@ -52,9 +61,9 @@ module CronoTrigger
       if params[:format] == "json"
         content_type :json
         @signals = CronoTrigger::Models::Signal.order(sent_at: :desc).limit(30)
-        Oj.dump({
+        encode_json({
           records: @signals,
-        }, mode: :compat)
+        })
       else
         raise "unknown format"
       end
@@ -136,9 +145,9 @@ module CronoTrigger
               -"delay_sec" => r.locking?(at: now) ? 0 : (now - r[r.crono_trigger_column_name(:next_execute_at)]).to_i,
             }
           end
-          Oj.dump({
+          encode_json({
             records: records,
-          }, mode: :compat)
+          })
         else
           status 404
           "Model Class is not found"
@@ -156,9 +165,9 @@ module CronoTrigger
       if params[:format] == "json"
         content_type :json
         @models = CronoTrigger::Schedulable.included_by.map(&:name).sort
-        Oj.dump({
+        encode_json({
           models: @models,
-        }, mode: :compat)
+        })
       else
         raise "unknown format"
       end
@@ -189,9 +198,9 @@ module CronoTrigger
               -"error_reason" => r.error_reason,
             }
           end
-          Oj.dump({
+          encode_json({
             records: records,
-          }, mode: :compat)
+          })
         else
           status 404
           "Model Class is not found"
@@ -199,6 +208,12 @@ module CronoTrigger
       else
         raise "unknown format"
       end
+    end
+
+    private
+
+    def encode_json(obj)
+      defined?(Oj) ? Oj.dump(obj, mode: :compat) : ActiveSupport::JSON.encode(obj)
     end
   end
 end

@@ -269,6 +269,16 @@ require "crono_trigger/web"
 mount CronoTrigger::Web => '/crono_trigger'
 ```
 
+### JSON serialization
+
+The Admin Web renders JSON with the standard `json` gem by default.
+If [`oj`](https://github.com/ohler55/oj) is installed, it is used automatically instead.
+To opt in, add it to your Gemfile:
+
+```ruby
+gem 'oj'
+```
+
 ## Rollbar integration
 This gem has rollbar plugin.
 If `crono_trigger/rollbar` is required, Add Rollbar logging process to `CronoTrigger.config.error_handlers`

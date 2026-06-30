@@ -28,12 +28,13 @@ Gem::Specification.new do |spec|
   spec.add_dependency "tzinfo"
   spec.add_dependency "sinatra"
   spec.add_dependency "rack-contrib"
-  spec.add_dependency "oj"
+  spec.add_dependency "ostruct"
   spec.add_dependency "activerecord", ">= 4.2"
   spec.add_dependency "retriable"
 
   spec.add_development_dependency "sqlite3", ">= 1.3"
   spec.add_development_dependency "mysql2"
+  spec.add_development_dependency "oj" # optional at runtime
   spec.add_development_dependency "timecop"
   spec.add_development_dependency "rollbar"
   spec.add_development_dependency "bundler", "~> 2.0"
